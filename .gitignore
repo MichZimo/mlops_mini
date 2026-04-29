@@ -1,1 +1,16 @@
+__pycache__
+*.pyc
+*.pyo
+
+# Virtual environments
 venv/
+.env
+
+# Data and models
+models/
+data/
+
+# OS files
+.DS_store
+
+
