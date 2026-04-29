@@ -7,9 +7,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from joblib import dump
 from pathlib import Path
+from config import BASE_DIR
 
-# Path resolving
-BASE_DIR = Path(__file__).resolve().parent.parent
+# Paths
 plot_path = BASE_DIR / "data" / "processed" / "cali_housing_pairplot.png"
 model_path = BASE_DIR / "models" / "cali_housing_model.joblib"
 

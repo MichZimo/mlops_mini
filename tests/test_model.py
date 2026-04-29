@@ -1,24 +1,15 @@
 import requests
-from dotenv import load_dotenv 
-import os 
-load_dotenv() # This loads variables from .env into os.environ 
+from config import BASE_URL
 
-api_url = os.getenv("BASE_URL") 
-debug = os.getenv("DEBUG", "False") # Disable debug mode
-
-
-
-url = api_url + '/predict' 
-
+url = BASE_URL + '/predict' 
 new_data = {'med_inc': 20000, 'longitude': 118.2426, 'latitude': 34.0549} # LA
-
 response = requests.post(url, json = new_data)
 
 #print(response.json()['predicted_price'])
 
 # Batch test
 
-url_batch = api_url + '/predict_many'
+url_batch = BASE_URL + '/predict_many'
 
 many_houses = {
     'houses':[

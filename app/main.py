@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from joblib import load
 from pydantic import BaseModel # Data validation and parsing lib
 import numpy as np
+from config import MODEL_PATH
 
 # load model
-model = load('/home/misha/Documents/mlops_mini/models/cali_housing_model.joblib') 
+model = load(MODEL_PATH) 
 
 app = FastAPI(title = 'House price prediction, California')
 
