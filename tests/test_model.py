@@ -1,26 +1,31 @@
-import requests
+#import requests
 from config import BASE_URL
+import pytest
+from src.predict import predict_price
 
 url = BASE_URL + '/predict' 
-new_data = {'med_inc': 20000, 'longitude': 118.2426, 'latitude': 34.0549} # LA
-response = requests.post(url, json = new_data)
-
-#print(response.json()['predicted_price'])
-
-# Batch test
-
 url_batch = BASE_URL + '/predict_many'
 
-many_houses = {
-    'houses':[
-        {'med_inc': 20000, 'longitude': 118.2426, 'latitude': 34.0549}, # LA
-        {'med_inc': 20000, 'longitude': 122.2730, 'latitude': 37.8715}, # Berkeley
-        {'med_inc': 20000, 'longitude': 122.4194, 'latitude': 37.7749} # SF
-    ]
-}
+@pytest.fixture
+def new_data():
+    return {'med_inc': 20000, 'longitude': 118.2426, 'latitude': 34.0549} # LA
 
+@pytest.fixture
+def many_houses(new_data):
+    return {
+        'houses':[
+            new_data,
+            {'med_inc': 20000, 'longitude': 122.2730, 'latitude': 37.8715}, # Berkeley
+            {'med_inc': 20000, 'longitude': 122.4194, 'latitude': 37.7749} # SF
+            ]
+        }
 
-responses = requests.post(url_batch, json = many_houses)
+def test_single_pred(new_data):
+    response = predict_price(url, new_data)
+    assert response.status_code == 200
+    assert "predicted_price" in response.json()
 
-#print(responses.json()['predicted_prices'])
-# automated tests with pytest and assert
+def test_batch_pred(many_houses):
+    responses = predict_price(url_batch, many_houses)
+    assert responses.status_code == 200
+    assert isinstance(responses.json()["predicted_prices"], list)
