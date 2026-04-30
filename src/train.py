@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from joblib import dump
 from pathlib import Path
 from config import BASE_DIR
+from src.evaluate import adjusted_r2, mse
+from sklearn.metrics import r2_score
 
 # Paths
 plot_path = BASE_DIR / "data" / "processed" / "cali_housing_pairplot.png"
@@ -33,6 +35,15 @@ X_train, X_test, y_train, y_test = train_test_split(
     ) # Split into train and test set
 reg = create_model()
 reg = reg.fit(X_train, y_train) # Fit model
+
+# Make prediction
+y_pred = reg.predict(X_test)
+
+# Evaluate model
+r2_value = r2_score(y_test, y_pred)
+adjusted_r2_score = adjusted_r2(X_test, y_test, y_pred)
+mse_score = mse(y_test, y_pred)
+print(f"R2: {r2_value}, Adjusted R2: {adj_r2_score}, \n MSE: {mse_score}")
 
 dump(reg, model_path) # Save model
 print('saved')
