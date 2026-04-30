@@ -4,7 +4,7 @@ from pathlib import Path
 
 load_dotenv() # Load variables from .env into os.environ
 
-BASE_DIR = Path(__file__).resolve().parent.parent  # Define project root
+BASE_DIR = Path(__file__).resolve().parent # Define project root
 
 BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
 MODEL_PATH = BASE_DIR /  os.getenv("MODEL_PATH",
