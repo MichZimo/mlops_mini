@@ -13,4 +13,6 @@ data/
 # OS files
 .DS_store
 
-
+# MLFlow
+mlruns/
+mlflow.db
