@@ -32,6 +32,4 @@ def create_plot(df, plotting=False, plot_path=None):  # only if needed
     sns.pairplot(df)
     plt.savefig(plot_path)
     plt.close()
-    
-    mlflow.log_artifact(str(plot_path))
-    return
+    return plot_path

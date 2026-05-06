@@ -4,6 +4,7 @@ from pydantic import BaseModel # Data validation and parsing lib
 import numpy as np
 from config import MODEL_PATH
 import pandas as pd
+import mlflow
 
 # load model
 model = load(MODEL_PATH) 
