@@ -1,26 +1,63 @@
 from fastapi import FastAPI
-from joblib import load
 from pydantic import BaseModel # Data validation and parsing lib
 import numpy as np
-from config import MODEL_PATH
 import pandas as pd
 import mlflow
+from mlflow.pyfunc import load_model
+from contextlib import asynccontextmanager
+from mlflow.tracking import MlflowClient
 
-# load model
-model = load(MODEL_PATH) 
-app = FastAPI(title = 'House price prediction, California')
+
+model_name= "house-price-predictor"
+stage = "Production"
+ml_models = {}
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model once per startup
+    client = MlflowClient()
+    latest_versions = client.get_latest_versions(
+        name=model_name,
+        stages=["Production"]
+    )
+
+    if not latest_versions:
+        raise RuntimeError(f"No Production model found for {model_name}")
+
+    model_version = latest_versions[0].version
+    model_uri = f"models:/{model_name}/{model_version}"
+    model = mlflow.pyfunc.load_model(model_uri)
+
+    ml_models["model"] = model
+    ml_models["version"] = model_version
+
+    yield
+    
+    # Clean up the ML models and release the resources
+    ml_models.clear()
+
+ 
+app = FastAPI(title = 'House price prediction, California', lifespan=lifespan)
+
 
 class HouseData(BaseModel):
     med_inc: float 
     longitude: float
     latitude: float
 
+# Rootendpoint
+@app.get("/")  
+def read_root():
+    # Return a simple JSON response
+    return {"message": "Welcome to the California House Prediction API"}  
+
 # Check, that API is alive
 @app.get('/health')
 def health():
     return {
         'status': 'ok',
-        'model_loaded': model is not None
+        'model_loaded': ml_models["model"] is not None
     }
 
 # Endpoint
@@ -35,8 +72,9 @@ def predict_price(data : HouseData):
             }
         ]
     )
-    price = model.predict(features)
-    return {'predicted_price': float(price[0])}
+    price = ml_models["model"].predict(features)
+    
+    return {'predicted_price': float(price[0]), 'model_version': ml_models["version"]}
 
 class MultipleHouses(BaseModel):
     houses: list[HouseData]
@@ -52,5 +90,13 @@ def predict_many_prices(data : MultipleHouses):
             }
         for house in data.houses]
     )
-    prices = model.predict(features)
-    return {'predicted_prices': prices.tolist()}
+    prices = ml_models["current_model"].predict(features)
+    return {'predicted_prices': prices.tolist(), 'model_version': ml_models["version"]}
+
+
+'''
+Load model only on startup (not import time)
+Add /reload-model endpoint
+Add version logging in API response
+Add CI pipeline trigger for retraining
+'''

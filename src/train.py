@@ -70,6 +70,4 @@ def log_to_mlflow(client, model_name, exp_name, run_name, X_train, X_test, y_tra
 
 
 
-## Necessary changes to MLFlow: promote only if new version better than current
-## Next step: FastAPI consumes Production model
 ## Stretch goal: CI/ CD with Docker, then retrainon new data

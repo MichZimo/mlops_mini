@@ -24,3 +24,6 @@ def main():
     # Selection
     best_candidate_version, best_candidate_run = get_best_candidate(client, model_name, exp_name)
     promote_best(model_name, best_candidate_run, best_candidate_version, client)
+
+if __name__ == "__main__":
+    main()
