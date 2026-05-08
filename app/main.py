@@ -12,10 +12,7 @@ model_name= "house-price-predictor"
 stage = "Production"
 ml_models = {}
 
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Load the ML model once per startup
+def model_loading():
     client = MlflowClient()
     latest_versions = client.get_latest_versions(
         name=model_name,
@@ -25,15 +22,19 @@ async def lifespan(app: FastAPI):
     if not latest_versions:
         raise RuntimeError(f"No Production model found for {model_name}")
 
-    model_version = latest_versions[0].version
-    model_uri = f"models:/{model_name}/{model_version}"
+    version = latest_versions[0].version
+    model_uri = f"models:/{model_name}/{version}"
     model = mlflow.pyfunc.load_model(model_uri)
+    return model, version
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model once per startup
+    model, version = model_loading()
     ml_models["model"] = model
-    ml_models["version"] = model_version
+    ml_models["version"] = version
 
     yield
-    
     # Clean up the ML models and release the resources
     ml_models.clear()
 
@@ -57,7 +58,8 @@ def read_root():
 def health():
     return {
         'status': 'ok',
-        'model_loaded': ml_models["model"] is not None
+        'model_loaded': ml_models.get("model") is not None,
+        'model_version': ml_models.get("version")
     }
 
 # Endpoint
@@ -90,13 +92,26 @@ def predict_many_prices(data : MultipleHouses):
             }
         for house in data.houses]
     )
-    prices = ml_models["current_model"].predict(features)
+    prices = ml_models["model"].predict(features)
     return {'predicted_prices': prices.tolist(), 'model_version': ml_models["version"]}
 
+@app.post('/reload_model')
+def reload_model():
+    # Only if version changed
+    # Get current version
+    current_version = ml_models.get("version")
+    # Get promoted version from mlflow
+    model, mlflow_version = model_loading()
+    # Compare, 
+    # if different reload
+    if current_version != mlflow_version:
+        # Reloading
+        model, version = model_loading()
+        ml_models["model"] = model
+        ml_models["version"] = mlflow_version
+        return {'status': 'reloaded', 'version': mlflow_version}
+    else: return {'status': 'up-to-date', 'version': current_version}
 
 '''
-Load model only on startup (not import time)
-Add /reload-model endpoint
-Add version logging in API response
 Add CI pipeline trigger for retraining
 '''
